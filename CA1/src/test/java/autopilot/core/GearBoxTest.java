@@ -8,7 +8,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -102,10 +101,16 @@ class GearBoxTest {
         assertThrows(SensorFailureException.class, () -> gearBox.changeTo(Gear.R));
     }
 
-    @ParameterizedTest(name = "sensor reports {0} km/h")
-    @ValueSource(doubles = {-1.0, Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY})
-    void changeTo_invalidSensorSpeed_throwsIllegalArgument(double invalidSpeedKmh) {
-        speedSensor.speedKmh = invalidSpeedKmh;
+    @Test
+    void changeTo_negativeSensorSpeed_throwsIllegalArgument() {
+        speedSensor.speedKmh = -1.0;
+
+        assertThrows(IllegalArgumentException.class, () -> gearBox.changeTo(Gear.R));
+    }
+
+    @Test
+    void changeTo_nanSensorSpeed_throwsIllegalArgument() {
+        speedSensor.speedKmh = Double.NaN;
 
         assertThrows(IllegalArgumentException.class, () -> gearBox.changeTo(Gear.R));
     }

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -42,9 +43,10 @@ class AdaptiveCruiseTest {
         assertEquals(0.0, cruise.safeDistanceFor(0.0), DELTA);
     }
 
-    @Test
-    void safeDistanceFor_negativeSpeed_throwsIllegalArgument() {
-        assertThrows(IllegalArgumentException.class, () -> cruise.safeDistanceFor(-1.0));
+    @ParameterizedTest(name = "speed {0} km/h")
+    @ValueSource(doubles = {-0.1, -50.0, Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY})
+    void safeDistanceFor_invalidSpeed_throwsIllegalArgument(double invalidSpeedKmh) {
+        assertThrows(IllegalArgumentException.class, () -> cruise.safeDistanceFor(invalidSpeedKmh));
     }
 
     @ParameterizedTest(name = "{0} km/h, {1} m -> {2} {3}")

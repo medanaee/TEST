@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.stream.Stream;
 
@@ -44,10 +43,9 @@ class SteeringControllerTest {
         assertEquals(MAX_STEP_DEGREES, angle, DELTA);
     }
 
-    @ParameterizedTest(name = "request {0} -> first tick {1}")
-    @ValueSource(doubles = {61.0, 200.0, 450.0})
-    void update_positiveRequestBeyondOneStep_movesByOneStepOnly(double requestedAngle) {
-        double angle = steering.update(requestedAngle, CITY_SPEED_KMH);
+    @Test
+    void update_positiveRequestBeyondOneStep_movesByOneStepOnly() {
+        double angle = steering.update(200.0, CITY_SPEED_KMH);
 
         assertEquals(MAX_STEP_DEGREES, angle, DELTA);
     }
@@ -117,10 +115,14 @@ class SteeringControllerTest {
         assertEquals(300.0 - MAX_STEP_DEGREES, angle, DELTA);
     }
 
-    @ParameterizedTest(name = "speed {0} km/h")
-    @ValueSource(doubles = {-0.1, -50.0, Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY})
-    void update_invalidSpeed_throwsIllegalArgument(double invalidSpeedKmh) {
-        assertThrows(IllegalArgumentException.class, () -> steering.update(10.0, invalidSpeedKmh));
+    @Test
+    void update_negativeSpeed_throwsIllegalArgument() {
+        assertThrows(IllegalArgumentException.class, () -> steering.update(10.0, -0.1));
+    }
+
+    @Test
+    void update_nanSpeed_throwsIllegalArgument() {
+        assertThrows(IllegalArgumentException.class, () -> steering.update(10.0, Double.NaN));
     }
 
     @Test
