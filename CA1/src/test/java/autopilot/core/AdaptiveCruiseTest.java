@@ -19,12 +19,10 @@ class AdaptiveCruiseTest {
     // At 80 km/h: safe distance 40 m, emergency distance 20 m, release distance 48 m.
     private static final double SPEED_KMH = 80.0;
     private static final double EMERGENCY_DISTANCE_METERS = 20.0;
-    private static final double SAFE_DISTANCE_METERS = 40.0;
+    // Between the emergency and safe distances, so a first reading here starts ordinary braking.
+    private static final double BRAKING_DISTANCE_METERS = 30.0;
     private static final double INSIDE_HYSTERESIS_BAND_METERS = 44.0;
-    private static final double RELEASE_DISTANCE_METERS = 48.0;
     private static final double FREE_ROAD_METERS = 200.0;
-    private static final double HYSTERESIS_BRAKE_PRESSURE = 10.0;
-    private static final double MAX_ACCELERATION_STEP_KMH = 5.0;
 
     private AdaptiveCruise cruise;
 
@@ -66,22 +64,16 @@ class AdaptiveCruiseTest {
         assertEquals(Mode.ACCELERATE, decision.mode());
     }
 
-    @Test
-    void update_distanceInsideHysteresisBandAfterBraking_keepsBraking() {
-        cruise.update(SPEED_KMH, EMERGENCY_DISTANCE_METERS + 1.0);
+    @ParameterizedTest(name = "braking, then {0} m -> {1} {2}")
+    @CsvFileSource(resources = "/adaptive-cruise-decisions-after-braking.csv", numLinesToSkip = 1)
+    void update_readingAfterBraking_returnsExpectedDecision(
+            double distanceMeters, Mode expectedMode, double expectedAmount) {
+        cruise.update(SPEED_KMH, BRAKING_DISTANCE_METERS);
 
-        Decision decision = cruise.update(SPEED_KMH, INSIDE_HYSTERESIS_BAND_METERS);
+        Decision decision = cruise.update(SPEED_KMH, distanceMeters);
 
-        assertEquals(Mode.BRAKE, decision.mode());
-    }
-
-    @Test
-    void update_distanceInsideHysteresisBandAfterBraking_appliesHysteresisPressure() {
-        cruise.update(SPEED_KMH, EMERGENCY_DISTANCE_METERS + 1.0);
-
-        Decision decision = cruise.update(SPEED_KMH, INSIDE_HYSTERESIS_BAND_METERS);
-
-        assertEquals(HYSTERESIS_BRAKE_PRESSURE, decision.amount(), DELTA);
+        assertEquals(expectedMode, decision.mode());
+        assertEquals(expectedAmount, decision.amount(), DELTA);
     }
 
     @Test
@@ -94,26 +86,8 @@ class AdaptiveCruiseTest {
     }
 
     @Test
-    void update_distanceBackBelowSafeDistanceAfterBraking_usesProportionalPressure() {
-        cruise.update(SPEED_KMH, EMERGENCY_DISTANCE_METERS + 1.0);
-
-        Decision decision = cruise.update(SPEED_KMH, SAFE_DISTANCE_METERS - 10.0);
-
-        assertEquals(25.0, decision.amount(), DELTA);
-    }
-
-    @Test
-    void update_distanceReachesReleaseDistanceAfterBraking_stopsBrakingAndAccelerates() {
-        cruise.update(SPEED_KMH, EMERGENCY_DISTANCE_METERS + 1.0);
-
-        Decision decision = cruise.update(SPEED_KMH, RELEASE_DISTANCE_METERS);
-
-        assertEquals(Mode.ACCELERATE, decision.mode());
-    }
-
-    @Test
     void update_afterBrakingIsReleased_laterInBandReadingAccelerates() {
-        cruise.update(SPEED_KMH, EMERGENCY_DISTANCE_METERS + 1.0);
+        cruise.update(SPEED_KMH, BRAKING_DISTANCE_METERS);
         cruise.update(SPEED_KMH, FREE_ROAD_METERS);
 
         Decision decision = cruise.update(SPEED_KMH, INSIDE_HYSTERESIS_BAND_METERS);
@@ -121,31 +95,9 @@ class AdaptiveCruiseTest {
         assertEquals(Mode.ACCELERATE, decision.mode());
     }
 
-    @Test
-    void update_farBelowTargetSpeedWithFreeRoad_acceleratesByStepLimitOnly() {
-        Decision decision = cruise.update(TARGET_SPEED_KMH - 50.0, FREE_ROAD_METERS);
-
-        assertEquals(MAX_ACCELERATION_STEP_KMH, decision.amount(), DELTA);
-    }
-
-    @Test
-    void update_negativeSpeed_throwsIllegalArgument() {
-        assertThrows(IllegalArgumentException.class, () -> cruise.update(-1.0, FREE_ROAD_METERS));
-    }
-
-    @Test
-    void update_nanSpeed_throwsIllegalArgument() {
-        assertThrows(IllegalArgumentException.class, () -> cruise.update(Double.NaN, FREE_ROAD_METERS));
-    }
-
-    @Test
-    void update_negativeDistance_throwsIllegalArgument() {
-        assertThrows(IllegalArgumentException.class, () -> cruise.update(SPEED_KMH, -1.0));
-    }
-
-    @Test
-    void update_infiniteDistance_throwsIllegalArgument() {
-        assertThrows(IllegalArgumentException.class,
-                () -> cruise.update(SPEED_KMH, Double.POSITIVE_INFINITY));
+    @ParameterizedTest(name = "{0} km/h, {1} m")
+    @CsvFileSource(resources = "/adaptive-cruise-invalid-readings.csv", numLinesToSkip = 1)
+    void update_invalidSpeedOrDistance_throwsIllegalArgument(double speedKmh, double distanceMeters) {
+        assertThrows(IllegalArgumentException.class, () -> cruise.update(speedKmh, distanceMeters));
     }
 }

@@ -1,0 +1,9 @@
+distanceMeters,expectedMode,expectedAmount
+# Each row: at 80 km/h a first reading of 30 m starts ordinary braking, then distanceMeters is read.
+# At 80 km/h: emergency distance 20 m, safe distance 40 m, release distance 48 m.
+20.0,EMERGENCY_BRAKE,100.0
+39.0,BRAKE,2.5
+40.0,BRAKE,10.0
+44.0,BRAKE,10.0
+47.9,BRAKE,10.0
+48.0,ACCELERATE,5.0

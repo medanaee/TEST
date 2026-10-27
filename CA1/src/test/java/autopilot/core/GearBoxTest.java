@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class GearBoxTest {
 
     private static final double STANDSTILL_KMH = 0.0;
+    private static final double DRIVING_SPEED_KMH = 80.0;
 
     private SettableSpeedSensor speedSensor;
     private GearBox gearBox;
@@ -27,7 +28,7 @@ class GearBoxTest {
     }
 
     @Test
-    void changeTo_freshGearBox_startsInPark() {
+    void getCurrentGear_newGearBox_returnsPark() {
         assertEquals(Gear.P, gearBox.getCurrentGear());
     }
 
@@ -74,7 +75,7 @@ class GearBoxTest {
 
     @Test
     void changeTo_forbiddenTransition_keepsCurrentGear() {
-        speedSensor.speedKmh = 80.0;
+        speedSensor.speedKmh = DRIVING_SPEED_KMH;
 
         assertThrows(IllegalGearChangeException.class, () -> gearBox.changeTo(Gear.R));
 
@@ -101,16 +102,10 @@ class GearBoxTest {
         assertThrows(SensorFailureException.class, () -> gearBox.changeTo(Gear.R));
     }
 
-    @Test
-    void changeTo_negativeSensorSpeed_throwsIllegalArgument() {
-        speedSensor.speedKmh = -1.0;
-
-        assertThrows(IllegalArgumentException.class, () -> gearBox.changeTo(Gear.R));
-    }
-
-    @Test
-    void changeTo_nanSensorSpeed_throwsIllegalArgument() {
-        speedSensor.speedKmh = Double.NaN;
+    @ParameterizedTest(name = "sensor reports {0} km/h")
+    @CsvSource({"-0.1", "NaN", "Infinity", "-Infinity"})
+    void changeTo_invalidSensorSpeed_throwsIllegalArgument(double invalidSpeedKmh) {
+        speedSensor.speedKmh = invalidSpeedKmh;
 
         assertThrows(IllegalArgumentException.class, () -> gearBox.changeTo(Gear.R));
     }

@@ -88,12 +88,6 @@ class BrakeControllerTest {
     }
 
     @Test
-    void apply_gearIsPark_throwsIllegalState() {
-        assertThrows(IllegalStateException.class,
-                () -> brake.apply(GENTLE_PRESSURE, ABS_SPEED_KMH, Gear.P));
-    }
-
-    @Test
     void apply_gearIsPark_leavesPressureAtZero() {
         assertThrows(IllegalStateException.class,
                 () -> brake.apply(GENTLE_PRESSURE, ABS_SPEED_KMH, Gear.P));
@@ -107,26 +101,20 @@ class BrakeControllerTest {
                 () -> brake.apply(GENTLE_PRESSURE, ABS_SPEED_KMH, null));
     }
 
-    @Test
-    void apply_negativePressure_throwsIllegalArgument() {
-        assertThrows(IllegalArgumentException.class, () -> brake.apply(-0.1, ABS_SPEED_KMH, Gear.D));
-    }
-
-    @Test
-    void apply_nanPressure_throwsIllegalArgument() {
+    @ParameterizedTest(name = "request {0}% at {1} km/h")
+    @CsvSource({
+            "-0.1,      100.0",
+            "NaN,       100.0",
+            "Infinity,  100.0",
+            "-Infinity, 100.0",
+            "50.0,      -0.1",
+            "50.0,      NaN",
+            "50.0,      Infinity",
+            "50.0,      -Infinity"
+    })
+    void apply_invalidPressureOrSpeed_throwsIllegalArgument(double requestedPressure, double speedKmh) {
         assertThrows(IllegalArgumentException.class,
-                () -> brake.apply(Double.NaN, ABS_SPEED_KMH, Gear.D));
-    }
-
-    @Test
-    void apply_negativeSpeed_throwsIllegalArgument() {
-        assertThrows(IllegalArgumentException.class, () -> brake.apply(GENTLE_PRESSURE, -0.1, Gear.D));
-    }
-
-    @Test
-    void apply_infiniteSpeed_throwsIllegalArgument() {
-        assertThrows(IllegalArgumentException.class,
-                () -> brake.apply(GENTLE_PRESSURE, Double.POSITIVE_INFINITY, Gear.D));
+                () -> brake.apply(requestedPressure, speedKmh, Gear.D));
     }
 
     @ParameterizedTest
@@ -143,11 +131,6 @@ class BrakeControllerTest {
         brake.emergencyBrake(gear);
 
         assertTrue(brake.isWarningActive());
-    }
-
-    @Test
-    void emergencyBrake_gearIsPark_throwsIllegalState() {
-        assertThrows(IllegalStateException.class, () -> brake.emergencyBrake(Gear.P));
     }
 
     @Test

@@ -26,6 +26,9 @@ class AutoDriverTest {
     private static final double NO_STEERING_DEGREES = 0.0;
     private static final double NO_BRAKE_PRESSURE = 0.0;
     private static final double SAFE_MODE_BRAKE_PRESSURE = 30.0;
+    private static final boolean NO_WARNING = false;
+    private static final boolean SAFE_MODE_OFF = false;
+    private static final boolean SAFE_MODE_ON = true;
     private static final String SENSOR_FAILURE_MESSAGE = "sensor failed";
 
     private enum FailingSensor { SPEED, OBSTACLE, LANE }
@@ -36,8 +39,8 @@ class AutoDriverTest {
 
         DriveResult result = driver.tick(Gear.D);
 
-        DriveResult expected = new DriveResult(
-                NO_STEERING_DEGREES, NO_BRAKE_PRESSURE, AdaptiveCruise.Mode.HOLD, false, false);
+        DriveResult expected = new DriveResult(NO_STEERING_DEGREES, NO_BRAKE_PRESSURE,
+                AdaptiveCruise.Mode.HOLD, NO_WARNING, SAFE_MODE_OFF);
         assertEquals(expected, result);
     }
 
@@ -66,8 +69,8 @@ class AutoDriverTest {
 
         DriveResult result = driver.tick(Gear.D);
 
-        DriveResult expected = new DriveResult(
-                NO_STEERING_DEGREES, SAFE_MODE_BRAKE_PRESSURE, AdaptiveCruise.Mode.BRAKE, false, true);
+        DriveResult expected = new DriveResult(NO_STEERING_DEGREES, SAFE_MODE_BRAKE_PRESSURE,
+                AdaptiveCruise.Mode.BRAKE, NO_WARNING, SAFE_MODE_ON);
         assertEquals(expected, result);
     }
 
